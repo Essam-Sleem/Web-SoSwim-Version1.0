@@ -103,7 +103,6 @@ namespace Web_SoSwim_Version1._0.Controllers
 
             if (codes.Count == 0)
             {
-                // Fallback to primary demo
                 codes.Add("12344321");
             }
 
@@ -111,80 +110,46 @@ namespace Web_SoSwim_Version1._0.Controllers
             return RedirectToAction(nameof(Index), new { code = codes.FirstOrDefault(), codes = string.Join(",", codes) });
         }
 
+        /// <summary>
+        /// Pure C# Server-Side SOS Trigger Form Action
+        /// </summary>
         [HttpPost]
-        public async Task<IActionResult> TriggerParentSos([FromBody] TriggerSosDto request)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TriggerSos(string trackingCode, string? reason, string? currentCodes)
         {
-            if (!ModelState.IsValid)
+            if (string.IsNullOrWhiteSpace(trackingCode))
             {
-                return BadRequest(new { success = false, message = "بيانات الطلب غير صالحة." });
+                TempData["ErrorMessage"] = "رمز السباح غير محدد.";
+                return RedirectToAction(nameof(Index), new { codes = currentCodes });
             }
 
-            var result = await _trackingService.TriggerParentSosAsync(request.TrackingCode, request.Reason);
+            var result = await _trackingService.TriggerParentSosAsync(trackingCode, reason);
             if (!result.Success)
             {
-                return Ok(new
-                {
-                    success = false,
-                    message = result.Message,
-                    swimmer = result.Swimmer,
-                    canParentTriggerSos = result.Swimmer?.CanParentTriggerSos ?? false
-                });
+                TempData["ErrorMessage"] = result.Message;
+            }
+            else
+            {
+                TempData["NotificationMessage"] = result.Message;
+                _logger.LogWarning("Parent triggered SOS in C# for swimmer {Code} with reason {Reason}", trackingCode, reason);
             }
 
-            _logger.LogWarning("Parent triggered SOS for swimmer {Code} with reason {Reason}", request.TrackingCode, request.Reason);
-
-            return Ok(new
-            {
-                success = true,
-                message = result.Message,
-                swimmer = result.Swimmer,
-                canParentTriggerSos = true
-            });
+            return RedirectToAction(nameof(Index), new { code = trackingCode, codes = currentCodes });
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetVitals(string code)
-        {
-            if (string.IsNullOrWhiteSpace(code))
-            {
-                return BadRequest(new { success = false, message = "رمز التتبع مطلوب." });
-            }
-
-            var swimmer = await _trackingService.GetByCodeAsync(code);
-            if (swimmer == null)
-            {
-                return NotFound(new { success = false, message = "جلسة السباح غير متوفرة." });
-            }
-
-            return Ok(new
-            {
-                success = true,
-                swimmer,
-                canParentTriggerSos = swimmer.CanParentTriggerSos
-            });
-        }
-
+        /// <summary>
+        /// Pure C# Server-Side Scenario Switcher Form Action
+        /// </summary>
         [HttpPost]
-        public async Task<IActionResult> SimulateScenario([FromBody] SimulateScenarioDto request)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SwitchScenario(string trackingCode, string scenario, string? currentCodes)
         {
-            if (!ModelState.IsValid)
+            if (!string.IsNullOrWhiteSpace(trackingCode) && !string.IsNullOrWhiteSpace(scenario))
             {
-                return BadRequest(new { success = false, message = "بيانات المحاكاة غير صالحة." });
+                await _trackingService.ApplySimulationScenarioAsync(trackingCode, scenario);
             }
 
-            var updated = await _trackingService.ApplySimulationScenarioAsync(request.TrackingCode, request.Scenario);
-            if (updated == null)
-            {
-                return NotFound(new { success = false, message = "لم يتم العثور على السباح المطلوب للمحاكاة." });
-            }
-
-            return Ok(new
-            {
-                success = true,
-                message = $"تم ضبط سيناريو المحاكاة إلى '{request.Scenario}' بنجاح.",
-                swimmer = updated,
-                canParentTriggerSos = updated.CanParentTriggerSos
-            });
+            return RedirectToAction(nameof(Index), new { code = trackingCode, codes = currentCodes });
         }
     }
 }
