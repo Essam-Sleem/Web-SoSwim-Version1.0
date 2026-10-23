@@ -1,0 +1,241 @@
+@{
+    ViewData["Title"] = Lang.T("الرئيسية - منظومة أمان السباحين", "Home - Swimmer Safety System");
+}
+
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-7">
+                <h1 class="hero-title">
+                    @if (Lang.IsArabic)
+                    {
+                        <span>حماية السباحين في البحر..<br /></span>
+                        <span class="gradient-text">تقليل زمن الاستجابة</span><span> للخطر إلى ثوانٍ معدودة.</span>
+                    }
+                    else
+                    {
+                        <span>Protecting Swimmers at Sea..<br /></span>
+                        <span class="gradient-text">Reducing Response Time</span><span> to Immediate Seconds.</span>
+                    }
+                </h1>
+
+                <p class="hero-subtitle">
+                    @Lang.T("جهاز سوار مائي يرتديه السباح يرصد استقرار حركته داخل الماء ويوفر زراً يدوياً لطلب النجدة، مع إمكانية قراءة النبض (قيد التطوير). عند رصد أي خطر أو ضغط زر الطوارئ، يُرسل نداء استغاثة مباشر للمنقذين مع تمكين الأهل من متابعة موقع وحالة أبنائهم فوراً.",
+                            "A wearable aquatic wristband tracking swimmer movement stability with a physical distress button, plus pulse sensing (currently in active R&D). If distress is detected or triggered, immediate emergency signals are transmitted to beach lifeguards while families track live telemetry.")
+                </p>
+
+                <div class="d-flex flex-wrap gap-3 align-items-center">
+                    <a href="#quick-track" class="btn-cyan">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                        <span>@Lang.T("متابعة سباح برمز الجلسة", "Track Swimmer with Code")</span>
+                    </a>
+
+                    <a href="#app-download" class="btn-surface">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>@Lang.T("تطبيق SoSwim", "SoSwim App")</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Quick Access Tracking Card -->
+            <div class="col-lg-5" id="quick-track">
+                <div class="tracking-entry-box">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div class="card-icon-wrapper mb-0" style="width: 38px; height: 38px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="8.5" cy="7" r="4"></circle>
+                                <polyline points="17 11 19 13 23 9"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="card-title mb-0" style="font-size: 1.15rem;">
+                                @Lang.T("متابعة أولياء الأمور للأبناء", "Parent Swimmer Tracking")
+                            </h3>
+                            <span class="text-secondary small">
+                                @Lang.T("جلسة تتبع مباشرة من المتصفح", "Live browser tracking without installation")
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="text-secondary small mb-3">
+                        @Lang.T("استلمت كوداً من المنقذ عند تسجيل نزول ابنك للبحر؟ اكتب الكود المكون من أرقام لمتابعة مؤشراته وموقعه في المياه فوراً.",
+                                "Received a session tracking code from the lifeguard? Enter it below to monitor your swimmer live.")
+                    </p>
+
+                    @if (ViewBag.ErrorMessage != null)
+                    {
+                        <div class="alert alert-danger py-2 px-3 small rounded-3 mb-3 border-0" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5;">
+                            @ViewBag.ErrorMessage
+                        </div>
+                    }
+
+                    <form asp-controller="Home" asp-action="QuickTrack" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="code-input-group">
+                            <input type="text" name="trackingCode" id="trackingCodeInput" class="soswim-input" placeholder="@Lang.T("مثال: 12344321", "e.g. 12344321")" required autocomplete="off" />
+                        </div>
+                        <button type="submit" class="btn-cyan w-100 justify-content-center py-3">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <span>@Lang.T("دخول إلى شاشة المتابعة الحية", "Enter Live Tracking Dashboard")</span>
+                        </button>
+                    </form>
+
+                    <div class="mt-4 pt-3 border-top" style="border-color: rgba(255, 255, 255, 0.08) !important;">
+                        <span class="text-secondary small d-block mb-2">
+                            @Lang.T("أكواد تجريبية جاهزة للاختبار المباشر:", "Pre-configured demo test codes:")
+                        </span>
+                        <div class="demo-pills-container">
+                            <a href="@Url.Action("Index", "Tracking", new { code = "12344321" })" class="demo-pill" title="يوسف - حالة مستقرة">
+                                12344321 (@Lang.T("مستقر", "Stable"))
+                            </a>
+                            <a href="@Url.Action("Index", "Tracking", new { code = "87654321" })" class="demo-pill" title="مريم - خطورة 64% لتجربة زر النجدة">
+                                87654321 (@Lang.T("مضطرب 64% - مفعّل للنجدة", "Unstable 64% - SOS Unlocked"))
+                            </a>
+                            <a href="@Url.Action("Index", "Tracking", new { code = "11223344" })" class="demo-pill" title="كريم - حالة طوارئ نشطة 95%">
+                                11223344 (@Lang.T("استغاثة طارئة", "Critical Danger"))
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section id="how-it-works" class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="hero-title" style="font-size: 2.1rem;">
+                @Lang.T("كيف يعمل جهاز SoSwim؟", "How Does SoSwim Work?")
+            </h2>
+            <p class="text-secondary mx-auto" style="max-width: 650px;">
+                @Lang.T("الاعتماد على استشعار حركة السباح في الماء وزر الاستغاثة الفعلي لتحديد الخطر بأسرع وقت.",
+                        "Relying on aquatic motion sensing and a physical distress button for fast risk detection.")
+            </p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="card-soswim">
+                    <div class="card-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                    </div>
+                    <h3 class="card-title">@Lang.T("مستشعر اتزان الحركة", "Motion Stability Gyro")</h3>
+                    <p class="card-desc">
+                        @Lang.T("مقياس تسارع وتوجيه مائي يميز بين السباحة الطبيعية وبين حركات التخبط وضعف المقاومة المميز لبداية الغرق.",
+                                "Aquatic accelerometer differentiating between steady swimming cadence and vertical struggle patterns in water.")
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="card-soswim">
+                    <div class="card-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                    </div>
+                    <h3 class="card-title">@Lang.T("زر النجدة اليدوي في السوار", "Wearable Emergency Button")</h3>
+                    <p class="card-desc">
+                        @Lang.T("زر أمان على جانب السوار يتيح للسباح ضغطه يدوياً لطلب النجدة فوراً إذا شعر بشد عضلي أو تيار بحري جارف.",
+                                "A physical distress button on the wristband allowing the swimmer to manually signal for help during sudden cramps or riptides.")
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="card-soswim">
+                    <div class="card-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+                            <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+                            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                            <line x1="12" y1="20" x2="12.01" y2="20"></line>
+                        </svg>
+                    </div>
+                    <h3 class="card-title">@Lang.T("إرسال إشارة استغاثة فورية", "Instant Sub-Second Alert")</h3>
+                    <p class="card-desc">
+                        @Lang.T("بث الإشارة بتردد بعيد المدى يصل إلى برج الإنقاذ فور رصد الخطر، مع إحداثيات موقع السباح بدقة لبدء الإنقاذ.",
+                                "Long-range RF/cellular telemetry transmitting distress packets to the lifeguard tower instantly with swimmer coordinates.")
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="card-soswim">
+                    <div class="card-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="card-title">
+                        @Lang.T("مستشعر النبض (قيد التطوير)", "Pulse Sensor (In R&D)")
+                    </h3>
+                    <p class="card-desc">
+                        @Lang.T("ميزة إضافية قيد البحث والتطوير تهدف لقياس معدل ضربات القلب للمساعدة في كشف الإجهاد في الماء بجانب مستشعرات الحركة وزر الاستغاثة.",
+                                "An optional feature under active research and engineering to track heart rate and stress alongside primary motion sensing.")
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- App Section (Clean, unified app for both lifeguards & parents) -->
+<section id="app-download" class="py-4">
+    <div class="container">
+        <div class="app-promo-card-clean">
+            <div class="row align-items-center justify-content-between g-4">
+                <div class="col-lg-8">
+                    <h2 class="hero-title mb-3" style="font-size: 2.1rem;">
+                        @Lang.T("حمل تطبيق SoSwim", "Download SoSwim App")
+                    </h2>
+                    <p class="text-secondary mb-4" style="line-height: 1.8; max-width: 720px;">
+                        @Lang.T("تطبيق مشترك بواجهات مخصصة: يتيح لطواقم الإنقاذ فتح الجلسات وإدارتها واستقبال إشارات الاستغاثة، كما يتيح للأهالي والمستخدمين متابعة أبنائهم وتلقي الإشعارات الفورية مباشرة على هواتفهم الذكية كبديل للموقع لمن يفضل استخدام التطبيق.",
+                                "A unified application with dedicated roles: Lifeguards manage active swimming sessions and emergency alerts, while parents and users can track swimmer status, live coordinates, and push notifications directly from their smartphones.")
+                    </p>
+
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="javascript:void(0)" class="store-badge" onclick="alert('@Lang.T("التطبيق قيد الإطلاق قريباً على المتاجر!", "App launching soon on the app stores!")')">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.67-.05-.83.26l-1.88 3.24c-1.34-.59-2.83-.93-4.47-.93-1.64 0-3.13.34-4.47.93L5.65 5.71c-.16-.31-.54-.41-.83-.26-.3.16-.42.54-.26.85l1.84 3.18C3.84 11.09 2 13.78 2 17h20c0-3.22-1.84-5.91-4.4-7.52zM7 14.5c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm10 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"></path>
+                            </svg>
+                            <div>
+                                <div class="text-secondary" style="font-size: 0.7rem;">@Lang.T("تحميل التطبيق", "Download App")</div>
+                                <div class="fw-bold">Google Play</div>
+                            </div>
+                        </a>
+
+                        <a href="javascript:void(0)" class="store-badge" onclick="alert('@Lang.T("التطبيق قيد الإطلاق قريباً على المتاجر!", "App launching soon on the app stores!")')">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 1.01-2.87-.96.04-2.13.64-2.79 1.41-.57.65-1.07 1.72-.94 2.76 1.07.08 2.13-.55 2.72-1.3z"></path>
+                            </svg>
+                            <div>
+                                <div class="text-secondary" style="font-size: 0.7rem;">@Lang.T("تحميل التطبيق", "Download App")</div>
+                                <div class="fw-bold">Apple App Store</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

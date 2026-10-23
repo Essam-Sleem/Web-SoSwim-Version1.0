@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="@Lang.CurrentLanguage" dir="@Lang.Direction">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SoSwim</title>
+    <link rel="icon" type="image/png" href="~/images/soswim-logo.png" />
+    
+    <!-- Bootstrap RTL/LTR & Styles -->
+    @if (Lang.IsArabic)
+    {
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" onerror="this.onerror=null;this.href='/lib/bootstrap/dist/css/bootstrap.min.css';" />
+    }
+    else
+    {
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    }
+    <link rel="stylesheet" href="~/css/soswim.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="soswim-bg-ambient"></div>
+    <div class="soswim-grid-pattern"></div>
+
+    <header>
+        <nav class="navbar navbar-expand-lg soswim-nav py-3">
+            <div class="container">
+                <a class="brand-container" asp-controller="Home" asp-action="Index">
+                    <img src="~/images/soswim-logo.png" alt="SoSwim Logo" class="brand-logo-img" />
+                    <div>
+                        <span class="brand-text" dir="ltr">So<span class="highlight">Swim</span></span>
+                        <div class="text-secondary" style="font-size: 0.72rem; margin-top: -4px;">
+                            @Lang.T("منظومة سلامة السباحين", "Swimmer Safety System")
+                        </div>
+                    </div>
+                </a>
+
+                <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#soswimNavMenu" aria-controls="soswimNavMenu" aria-expanded="false" aria-label="Toggle navigation">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+
+                <div class="collapse navbar-collapse" id="soswimNavMenu">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-1">
+                        <li class="nav-item">
+                            <a class="nav-link-item" asp-controller="Home" asp-action="Index">
+                                @Lang.T("الرئيسية", "Home")
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link-item" href="#how-it-works">
+                                @Lang.T("عن الجهاز والتقنية", "How It Works")
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link-item" href="#app-download">
+                                @Lang.T("تطبيق SoSwim", "SoSwim App")
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <!-- Language Switcher -->
+                        @if (Lang.IsArabic)
+                        {
+                            <a href="?lang=en" class="lang-toggle-btn" title="Switch to English">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                </svg>
+                                <span>English</span>
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="?lang=ar" class="lang-toggle-btn" title="التحويل للغة العربية">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                </svg>
+                                <span>العربية</span>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <footer class="soswim-footer">
+        <div class="container">
+            <div class="row g-4 align-items-center">
+                <div class="col-md-7">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <img src="~/images/soswim-logo.png" alt="SoSwim Logo" style="height: 34px; width: auto; object-fit: contain;" />
+                        <span class="brand-text" dir="ltr" style="font-size: 1.15rem;">So<span class="highlight">Swim</span></span>
+                    </div>
+                    <p class="text-secondary small mb-0">
+                        @Lang.T("نظام ذكي لتعزيز أمان السباحين في البحار والمياه المفتوحة وتقليل زمن الاستجابة في حالات الطوارئ.",
+                                 "Smart system enhancing swimmer safety in open waters and minimizing emergency response times.")
+                    </p>
+                </div>
+                <div class="col-md-5 text-md-end">
+                    <div class="text-secondary small">
+                        &copy; @DateTime.UtcNow.Year - SoSwim Safety System
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

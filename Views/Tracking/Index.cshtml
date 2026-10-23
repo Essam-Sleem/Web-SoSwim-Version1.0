@@ -1,0 +1,434 @@
+@model Web_SoSwim_Version1._0.Models.ViewModels.TrackingDashboardViewModel
+
+@{
+    ViewData["Title"] = Lang.T("لوحة المتابعة الحية للسباحين", "Swimmer Live Telemetry Dashboard");
+    var currentSwimmer = Model.ActiveSwimmer;
+    var allCodes = string.Join(",", Model.Swimmers.Select(s => s.TrackingCode));
+}
+
+<div class="container py-4">
+    <!-- Active Tracking Code Input for JavaScript -->
+    <input type="hidden" id="activeTrackingCode" value="@currentSwimmer?.TrackingCode" />
+
+    <!-- Notifications & SOS Banner -->
+    <div id="sosAlertBanner" class="alert alert-danger py-3 px-4 rounded-4 mb-4 @(currentSwimmer != null && (currentSwimmer.IsParentAlertActive || currentSwimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.InDanger) ? "" : "d-none")" style="background: rgba(239, 68, 68, 0.22); border: 1px solid rgba(239, 68, 68, 0.6); color: #fecaca;">
+        <div class="d-flex align-items-center gap-3">
+            <div class="flex-shrink-0">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </div>
+            <div>
+                <strong class="d-block text-white" style="font-size: 1.05rem;">
+                    @Lang.T("إنذار استغاثة طارئ نشط!", "Emergency Distress Alarm Active!")
+                </strong>
+                <span id="sosAlertBannerText">
+                    @(currentSwimmer?.ParentAlertReason ?? Lang.T("تم إرسال إشارة استغاثة عاجلة لبرج الإنقاذ ودوريات الشاطئ. فرق الإنقاذ تتوجه لموقع السباح حالياً.",
+                                                                 "Distress signal transmitted to lifeguard tower & patrol boats. Rescue team dispatched to swimmer location."))
+                </span>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.NotificationMessage))
+    {
+        <div class="alert alert-info py-2 px-3 rounded-3 mb-4 small" style="background: rgba(2, 132, 199, 0.15); border: 1px solid rgba(2, 132, 199, 0.3); color: #7dd3fc;">
+            @Model.NotificationMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger py-2 px-3 rounded-3 mb-4 small" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5;">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    <!-- Dashboard Top Bar: Swimmer Tabs & Add Swimmer Action -->
+    <div class="dashboard-header-bar">
+        <div>
+            <div class="text-secondary small mb-1">
+                @Lang.T("جلسة المراقبة المباشرة للأهالي", "Parent Real-Time Monitoring Session")
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <h1 class="h4 mb-0 fw-bold text-white">
+                    @Lang.T("السباحون الخاضعون لمتابعتك", "Monitored Swimmers")
+                </h1>
+                <span class="badge rounded-pill bg-dark border border-secondary text-secondary">@Model.Swimmers.Count</span>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="swimmer-tabs-container">
+                @foreach (var swimmer in Model.Swimmers)
+                {
+                    var isActive = swimmer.TrackingCode.Equals(currentSwimmer?.TrackingCode, StringComparison.OrdinalIgnoreCase);
+                    var dotClass = swimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.Stable ? "dot-stable" :
+                                   swimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.Unstable ? "dot-warning" : "dot-danger";
+
+                    <a href="@Url.Action("Index", "Tracking", new { code = swimmer.TrackingCode, codes = allCodes })" 
+                       class="swimmer-tab-pill @(isActive ? "active" : "")">
+                        <span class="tab-status-dot @dotClass"></span>
+                        <span>@swimmer.FullName</span>
+                        <small class="text-secondary" style="font-family: var(--font-mono); font-size: 0.75rem;">(@swimmer.TrackingCode)</small>
+                    </a>
+                }
+            </div>
+
+            <!-- Add another swimmer button -->
+            <button type="button" class="btn-cyan py-2 px-3" data-bs-toggle="modal" data-bs-target="#addSwimmerModal" style="font-size: 0.88rem;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>@Lang.T("إضافة ابن آخر بالكود", "Add Another Swimmer")</span>
+            </button>
+        </div>
+    </div>
+
+    @if (currentSwimmer == null)
+    {
+        <div class="card-soswim text-center py-5">
+            <p class="text-secondary">@Lang.T("لا توجد بيانات جلسة متاحة لرمز التتبع المحدد.", "No active session found for the requested tracking code.")</p>
+            <a asp-controller="Home" asp-action="Index" class="btn-cyan mx-auto">@Lang.T("العودة للرئيسية", "Return Home")</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4 align-items-start">
+            <!-- Left Column: Profile Card, Ocean Map, & Telemetry Grid -->
+            <div class="col-lg-8">
+                <!-- Swimmer Profile Card -->
+                <div class="card-soswim mb-4">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <h2 class="h3 fw-bold text-white mb-0">@currentSwimmer.FullName</h2>
+                                <span class="badge bg-dark border border-secondary text-cyan font-monospace px-2 py-1">
+                                    @Lang.T("كود", "Code"): @currentSwimmer.TrackingCode
+                                </span>
+                            </div>
+                            <div class="text-secondary small d-flex flex-wrap gap-2 gap-md-3">
+                                <span>@Lang.T("العمر", "Age"): @currentSwimmer.Age @Lang.T("سنة", "yrs")</span>
+                                <span class="text-muted">|</span>
+                                <span>@Lang.T("المستوى", "Level"): @currentSwimmer.SwimmingLevel</span>
+                                <span class="text-muted">|</span>
+                                <span>@Lang.T("الموقع", "Location"): @currentSwimmer.BeachLocation</span>
+                                <span class="text-muted">|</span>
+                                <span>@Lang.T("المشرف", "Supervisor"): @currentSwimmer.LifeguardName</span>
+                            </div>
+                        </div>
+
+                        <!-- Live Status Badge -->
+                        <div>
+                            @{
+                                var statusClass = currentSwimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.Stable ? "status-badge-stable" :
+                                                  currentSwimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.Unstable ? "status-badge-warning" : "status-badge-danger";
+                                var statusText = currentSwimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.Stable ? Lang.T("مستقر وآمن", "Stable & Safe") :
+                                                 currentSwimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.Unstable ? Lang.T("غير مستقر / اشتباه خطر", "Unstable / Needs Attention") : Lang.T("في خطر شديد / استغاثة طارئة", "Critical Danger / Active SOS");
+                            }
+                            <span id="swimmerStatusBadge" class="status-badge @statusClass">
+                                <span class="tab-status-dot @(currentSwimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.Stable ? "dot-stable" : currentSwimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.Unstable ? "dot-warning" : "dot-danger")"></span>
+                                <span id="swimmerStatusLabel">@statusText</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Medical Notes Callout -->
+                    <div class="p-3 rounded-3 small" style="background: rgba(5, 11, 20, 0.65); border: 1px solid var(--border-color);">
+                        <strong class="text-secondary">@Lang.T("ملاحظات المنقذ الصحية المسجلة:", "Lifeguard Medical Notes:")</strong>
+                        <span class="text-white ms-2">@currentSwimmer.MedicalNotes</span>
+                    </div>
+                </div>
+
+                <!-- Sonar Ocean Map View (Clean, Non-overlapping) -->
+                <div class="sonar-ocean-view">
+                    <!-- Beach Shore at bottom -->
+                    <div class="shore-line">
+                        <span>@Lang.T("خط الشاطئ واليابسة (نقطة الأمان والمراقبة)", "Beach Shoreline (Safety & Observation Zone)")</span>
+                    </div>
+
+                    <!-- Lifeguard Tower Marker -->
+                    <div class="lifeguard-tower-marker">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polygon points="12 2 2 22 22 22 12 2"></polygon>
+                        </svg>
+                        <span>@currentSwimmer.LifeguardName</span>
+                    </div>
+
+                    <!-- Swimmer Beacon Marker -->
+                    @{
+                        var distClamped = Math.Min(currentSwimmer.Vitals.DistanceFromShoreMeters, 110.0);
+                        var bottomPct = 20.0 + ((distClamped / 110.0) * 58.0);
+                    }
+                    <div id="swimmerBeacon" class="swimmer-beacon" style="left: 50%; bottom: @(bottomPct.ToString("0.0"))%;">
+                        <div class="beacon-pulse" style="background-color: @(currentSwimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.Stable ? "rgba(16, 185, 129, 0.4)" : currentSwimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.Unstable ? "rgba(245, 158, 11, 0.5)" : "rgba(239, 68, 68, 0.6)");"></div>
+                        <div class="beacon-core" style="width: 14px; height: 14px; border-radius: 50%; background-color: @(currentSwimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.Stable ? "var(--status-stable)" : currentSwimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.Unstable ? "var(--status-warning)" : "var(--status-danger)"); border: 2px solid #ffffff; box-shadow: 0 0 8px currentColor;"></div>
+                        <div class="beacon-label-tag">
+                            @currentSwimmer.FullName
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vital Telemetry Grid -->
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6 col-md-3">
+                        <div class="metric-box">
+                            <div class="metric-header">
+                                <span>@Lang.T("نبضات القلب (قيد التطوير)", "Heart Rate (In R&D)")</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-danger">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                </svg>
+                            </div>
+                            <div class="metric-value">
+                                <span id="metricHeartRate">@currentSwimmer.Vitals.HeartRateBpm</span>
+                                <span class="metric-unit">BPM</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-md-3">
+                        <div class="metric-box">
+                            <div class="metric-header">
+                                <span>@Lang.T("المسافة عن الشاطئ", "Shore Distance")</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-cyan">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                                </svg>
+                            </div>
+                            <div class="metric-value">
+                                <span id="metricDistance">@currentSwimmer.Vitals.DistanceFromShoreMeters.ToString("0.0")</span>
+                                <span class="metric-unit">@Lang.T("متر", "m")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-md-3">
+                        <div class="metric-box">
+                            <div class="metric-header">
+                                <span>@Lang.T("عمق المياه", "Water Depth")</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-cyan">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <polyline points="19 12 12 19 5 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="metric-value">
+                                <span id="metricDepth">@currentSwimmer.Vitals.DepthMeters.ToString("0.1")</span>
+                                <span class="metric-unit">@Lang.T("متر", "m")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-6 col-md-3">
+                        <div class="metric-box">
+                            <div class="metric-header">
+                                <span>@Lang.T("شحن السوار", "Battery")</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-emerald">
+                                    <rect x="1" y="6" width="18" height="12" rx="2" ry="2"></rect>
+                                    <line x1="23" y1="13" x2="23" y2="11"></line>
+                                </svg>
+                            </div>
+                            <div class="metric-value">
+                                <span id="metricBattery">@currentSwimmer.Vitals.BatteryPercentage%</span>
+                                <span class="metric-unit">@Lang.T("سليم", "Healthy")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-3 rounded-3" style="background: var(--bg-surface); border: 1px solid var(--border-color);">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <span class="text-secondary small">
+                            @Lang.T("نمط حركة الذراعين وتوازن الجسم في الماء:", "Arm Cadence & Aquatic Movement Pattern:")
+                        </span>
+                        <span id="metricMovement" class="fw-bold text-white">@currentSwimmer.Vitals.MovementPattern</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Risk Meter & Parent SOS Button Card -->
+            <div class="col-lg-4">
+                <!-- Instability Risk Meter -->
+                <div class="risk-meter-wrapper">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-secondary fw-bold small">
+                            @Lang.T("مؤشر احتمالية اضطراب الحركة والخطر:", "Instability & Distress Probability:")
+                        </span>
+                        <span id="riskPercentageText" class="metric-value @(currentSwimmer.Vitals.InstabilityRiskPercentage < 50 ? "text-emerald" : currentSwimmer.Vitals.InstabilityRiskPercentage < 80 ? "text-amber" : "text-danger")" style="font-size: 1.35rem;">
+                            @currentSwimmer.Vitals.InstabilityRiskPercentage%
+                        </span>
+                    </div>
+
+                    <div class="risk-progress-bar-bg">
+                        <!-- 50% Threshold Marker -->
+                        <div class="risk-marker-50" title="@Lang.T("حد الـ 50% المشروط لفتح الاستغاثة", "50% SOS Unlock Threshold")"></div>
+                        <div id="riskPercentageFill" class="risk-progress-bar-fill" style="width: @currentSwimmer.Vitals.InstabilityRiskPercentage%; background: @(currentSwimmer.Vitals.InstabilityRiskPercentage < 50 ? "linear-gradient(90deg, #10b981, #0284c7)" : currentSwimmer.Vitals.InstabilityRiskPercentage < 80 ? "linear-gradient(90deg, #0284c7, #f59e0b)" : "linear-gradient(90deg, #f59e0b, #ef4444)");"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-between text-muted small mt-2" style="font-family: var(--font-mono); font-size: 0.72rem;">
+                        <span>0% (@Lang.T("أمان", "Safe"))</span>
+                        <span class="text-cyan fw-bold">@Lang.T("عتبة النجدة: 50%", "SOS Gate: 50%")</span>
+                        <span>100% (@Lang.T("خطر", "Danger"))</span>
+                    </div>
+
+                    <div id="riskStatusHint" class="mt-3 small" style="line-height: 1.6;">
+                        @if (currentSwimmer.CanParentTriggerSos)
+                        {
+                            <span class="text-amber fw-bold">
+                                @Lang.T("مؤشرات عدم الاستقرار تجاوزت 50%! تم فتح زر الاستغاثة إذا كنت قلقاً على ابنك.",
+                                        "Instability exceeded 50%! Parent SOS emergency button is unlocked.")
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-secondary">
+                                @Lang.T("الزر مقفل تلقائياً لأن مؤشرات السباح مستقرة (أقل من 50% نسبة اشتباه خطر) منعاً للإنذارات الخاطئة.",
+                                        "SOS button is locked: Swimmer vitals are stable (< 50% risk) to prevent false alarms.")
+                            </span>
+                        }
+                    </div>
+                </div>
+
+                <!-- Parent SOS Distress Button Card -->
+                <div id="sosCardWrapper" class="sos-button-card @(currentSwimmer.CanParentTriggerSos ? "unlocked" : "")">
+                    <div class="mb-3">
+                        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="@(currentSwimmer.CanParentTriggerSos ? "text-danger" : "text-secondary")">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                    </div>
+
+                    <h3 class="h5 fw-bold text-white mb-2">
+                        @Lang.T("زر استغاثة طارئة للأهل", "Parent Emergency SOS Button")
+                    </h3>
+                    <p class="text-secondary small mb-3">
+                        @Lang.T("إذا لاحظت أي أمر مقلق أو رغبت في استدعاء المنقذين فوراً، يمكنك إرسال نداء استغاثة مباشر للبرج والزوارق.",
+                                "If you suspect danger, you can transmit an immediate priority distress alert directly to lifeguard towers & rescue boats.")
+                    </p>
+
+                    @if (currentSwimmer.IsParentAlertActive || currentSwimmer.Status == Web_SoSwim_Version1._0.Models.Domain.SwimmerStatus.InDanger)
+                    {
+                        <button id="btnParentSos" type="button" class="btn btn-success fw-bold p-3 w-100" disabled>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            <span>@Lang.T("تم إرسال الاستغاثة بنجاح - فرق الإنقاذ في الطريق", "SOS Alert Sent - Lifeguards Dispatched")</span>
+                        </button>
+                    }
+                    else
+                    {
+                        <button id="btnParentSos" type="button" class="btn-parent-sos w-100 justify-content-center" @(currentSwimmer.CanParentTriggerSos ? "" : "disabled")>
+                            @if (currentSwimmer.CanParentTriggerSos)
+                            {
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                                <span>@Lang.T("إرسال نداء استغاثة عاجل للمنقذ", "Transmit Emergency Distress Call")</span>
+                            }
+                            else
+                            {
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                <span>@Lang.T("طلب نجدة طارئة (مقفل حالياً)", "Emergency SOS (Currently Locked)")</span>
+                            }
+                        </button>
+                    }
+
+                    <div class="mt-2 text-muted" style="font-size: 0.76rem;">
+                        @Lang.T("شرط التفعيل: نسبة عدم استقرار السباح >= 50%", "Activation Rule: Instability Risk >= 50%")
+                    </div>
+                </div>
+
+                <!-- Remove Swimmer from view button if more than 1 -->
+                @if (Model.Swimmers.Count > 1)
+                {
+                    <div class="mt-3 text-center">
+                        <form asp-controller="Tracking" asp-action="RemoveSwimmer" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="codeToRemove" value="@currentSwimmer.TrackingCode" />
+                            <input type="hidden" name="currentCodes" value="@allCodes" />
+                            <button type="submit" class="btn btn-sm btn-outline-secondary text-secondary border-0 py-1" onclick="return confirm('@Lang.T("هل تريد إزالة هذا السباح من قائمة المراقبة الحالية؟", "Remove this swimmer from active monitoring list?")')">
+                                @Lang.T("إزالة هذا السباح من الشاشة", "Remove Swimmer from Screen")
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Prototype Interactive Scenario Switcher -->
+        <div class="simulation-bar">
+            <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold text-cyan small">@Lang.T("أدوات اختبار النظام (Simulation):", "System Testing Modes:")</span>
+                <span class="text-secondary small">
+                    @Lang.T("اضغط لتغيير إشارات السوار الحيوية واختبار شرط الـ 50% لحظياً:", "Test live telemetry scenarios and the 50% rule:")
+                </span>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="button" class="btn btn-sm btn-outline-success btn-simulate-scenario" data-scenario="stable">
+                    @Lang.T("محاكاة: حالة مستقرة (18% - يقفل الزر)", "Scenario: Stable (18% - Locks SOS)")
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-warning btn-simulate-scenario" data-scenario="unstable_warning">
+                    @Lang.T("محاكاة: اشتباه اضطراب (68% - يفتح زر الأهل)", "Scenario: Warning (68% - Unlocks SOS)")
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger btn-simulate-scenario" data-scenario="danger_sos">
+                    @Lang.T("محاكاة: خطر داهم (94% - استغاثة نشطة)", "Scenario: Danger (94% - Active SOS)")
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal: Add Another Swimmer -->
+<div class="modal fade" id="addSwimmerModal" tabindex="-1" aria-labelledby="addSwimmerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content soswim-modal">
+            <div class="modal-header soswim-modal-header">
+                <h5 class="modal-title fw-bold text-white" id="addSwimmerModalLabel">
+                    @Lang.T("إضافة سباح آخر إلى نفس الشاشة", "Add Another Swimmer to Session")
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-controller="Tracking" asp-action="AddSwimmer" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="ExistingCodes" value="@allCodes" />
+                <div class="modal-body p-4">
+                    <p class="text-secondary small mb-3">
+                        @Lang.T("إذا كان لديك ابن ثانٍ أو مرافق نزل البحر أيضاً، اطلب الكود الخاص به من المنقذ وأدخله هنا لمراقبتهما معاً في نفس الوقت:",
+                                "If you have another child or companion swimming, enter the tracking code given by the lifeguard to monitor both simultaneously:")
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label text-white small">
+                            @Lang.T("رمز التتبع المكون من أرقام:", "Numeric Tracking Code:")
+                        </label>
+                        <input type="text" name="TrackingCode" class="soswim-input text-center" placeholder="@Lang.T("مثال: 87654321 أو 1234231", "e.g. 87654321 or 1234231")" required autocomplete="off" />
+                    </div>
+                    <div class="p-2 rounded-2 small text-secondary" style="background: rgba(255,255,255,0.03);">
+                        @Lang.T("ملاحظة: يمكنك إدخال أي كود تم استلامه من المنقذ أو أحد الأكواد التجريبية (مثل 87654321 أو 11223344 أو أي رقم).",
+                                "Note: You can enter any code received from the lifeguard or demo codes (e.g. 87654321, 11223344, etc.).")
+                    </div>
+                </div>
+                <div class="modal-footer soswim-modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                        @Lang.T("إلغاء", "Cancel")
+                    </button>
+                    <button type="submit" class="btn-cyan py-2 px-4">
+                        @Lang.T("إضافة ومتابعة", "Add & Track")
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/tracking.js" asp-append-version="true"></script>
+}
