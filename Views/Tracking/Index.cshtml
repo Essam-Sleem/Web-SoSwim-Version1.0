@@ -369,47 +369,6 @@
                 }
             </div>
         </div>
-
-        <!-- Pure C# Server-Side Interactive Scenario Switcher -->
-        <div class="simulation-bar">
-            <div class="d-flex align-items-center gap-2">
-                <span class="fw-bold text-cyan small">@Lang.T("أدوات اختبار النظام (Simulation):", "System Testing Modes:")</span>
-                <span class="text-secondary small">
-                    @Lang.T("اضغط لتغيير إشارات السوار واختبار شرط الـ 50% لحظياً عبر الخادم:", "Test live telemetry scenarios and the 50% rule:")
-                </span>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
-                <form asp-controller="Tracking" asp-action="SwitchScenario" method="post" class="d-inline">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="trackingCode" value="@currentSwimmer.TrackingCode" />
-                    <input type="hidden" name="scenario" value="stable" />
-                    <input type="hidden" name="currentCodes" value="@allCodes" />
-                    <button type="submit" class="btn btn-sm btn-outline-success">
-                        @Lang.T("محاكاة: حالة مستقرة (18% - يقفل الزر)", "Scenario: Stable (18% - Locks SOS)")
-                    </button>
-                </form>
-
-                <form asp-controller="Tracking" asp-action="SwitchScenario" method="post" class="d-inline">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="trackingCode" value="@currentSwimmer.TrackingCode" />
-                    <input type="hidden" name="scenario" value="unstable_warning" />
-                    <input type="hidden" name="currentCodes" value="@allCodes" />
-                    <button type="submit" class="btn btn-sm btn-outline-warning">
-                        @Lang.T("محاكاة: اشتباه اضطراب (68% - يفتح زر الأهل)", "Scenario: Warning (68% - Unlocks SOS)")
-                    </button>
-                </form>
-
-                <form asp-controller="Tracking" asp-action="SwitchScenario" method="post" class="d-inline">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="trackingCode" value="@currentSwimmer.TrackingCode" />
-                    <input type="hidden" name="scenario" value="danger_sos" />
-                    <input type="hidden" name="currentCodes" value="@allCodes" />
-                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                        @Lang.T("محاكاة: خطر داهم (94% - استغاثة نشطة)", "Scenario: Danger (94% - Active SOS)")
-                    </button>
-                </form>
-            </div>
-        </div>
     }
 </div>
 
